@@ -44,12 +44,20 @@ open class KCFloatingActionButtonItem: UIView {
     /**
      Circle Shadow color.
      */
-    open var circleShadowColor: UIColor? = UIColor.black
+    open var circleShadowColor: UIColor? = UIColor.black {
+        didSet {
+            setCircleShadow()
+        }
+    }
 
     /**
      Title Shadow color.
      */
-    open var titleShadowColor: UIColor? = UIColor.black
+    open var titleShadowColor: UIColor? = UIColor.black {
+        didSet {
+            setTitleShadow()
+        }
+    }
 
     /**
      If you touch up inside button, it execute handler.
@@ -88,6 +96,7 @@ open class KCFloatingActionButtonItem: UIView {
                 _titleLabel = UILabel()
                 _titleLabel?.textColor = titleColor
                 addSubview(_titleLabel!)
+                setTitleShadow()
             }
             return _titleLabel!
         }
@@ -171,7 +180,6 @@ open class KCFloatingActionButtonItem: UIView {
         self.layer.shouldRasterize = true
         self.layer.rasterizationScale = UIScreen.main.scale
         createCircleLayer()
-        setShadow()
 
         if _titleLabel != nil {
             bringSubview(toFront: _titleLabel!)
@@ -188,6 +196,7 @@ open class KCFloatingActionButtonItem: UIView {
         circleLayer.backgroundColor = buttonColor.cgColor
         circleLayer.cornerRadius = size/2
         layer.addSublayer(circleLayer)
+        setCircleShadow()
     }
 
     fileprivate func createTintLayer() {
@@ -199,7 +208,7 @@ open class KCFloatingActionButtonItem: UIView {
         layer.addSublayer(tintLayer)
     }
 
-    fileprivate func setShadow() {
+    fileprivate func setCircleShadow() {
         circleLayer.shadowOffset = CGSize(width: 1, height: 1)
         circleLayer.shadowRadius = 2
         if let circleShadowColor = circleShadowColor {
@@ -208,8 +217,10 @@ open class KCFloatingActionButtonItem: UIView {
         } else {
             circleLayer.shadowOpacity = 0.0
         }
+    }
 
-
+    func setTitleShadow() {
+        guard let titleLabel = _titleLabel else { return }
         titleLabel.layer.shadowOffset = CGSize(width: 1, height: 1)
         titleLabel.layer.shadowRadius = 2
         if let titleShadowColor = titleShadowColor {
@@ -218,7 +229,6 @@ open class KCFloatingActionButtonItem: UIView {
         } else {
             titleLabel.layer.shadowOpacity = 0.0
         }
-
     }
 
     open override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {

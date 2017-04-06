@@ -544,10 +544,10 @@ open class KCFloatingActionButton: UIView {
 	}
 
     fileprivate func setShadow() {
-        layer.shadowOffset = CGSize(width: 1, height: 1)
-        layer.shadowRadius = 2
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.4
+        circleLayer.shadowOffset = CGSize(width: 1, height: 1)
+        circleLayer.shadowRadius = 2
+        circleLayer.shadowColor = UIColor.black.cgColor
+        circleLayer.shadowOpacity = 0.4
     }
 
     fileprivate func plusBezierPath() -> UIBezierPath {

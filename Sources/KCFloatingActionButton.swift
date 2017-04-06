@@ -127,7 +127,7 @@ open class KCFloatingActionButton: UIView {
     /**
         Child item's default shadow color.
     */
-    @IBInspectable open var itemShadowColor: UIColor = UIColor.black
+    @IBInspectable open var itemShadowColor: UIColor? = UIColor.black
 
     /**
 

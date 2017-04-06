@@ -21,16 +21,19 @@ open class KCFloatingActionButtonItem: UIView {
     open var size: CGFloat = 42 {
         didSet {
             self.frame = CGRect(x: 0, y: 0, width: size, height: size)
-            titleLabel.frame.origin.y = self.frame.height/2-titleLabel.frame.size.height/2
-            _iconImageView?.center = CGPoint(x: size/2, y: size/2) + imageOffset
-            self.setNeedsDisplay()
+            setCircleViewConstraints()
+            circleView.layoutIfNeeded()
         }
     }
 
     /**
      Button color.
      */
-    open var buttonColor: UIColor = UIColor.white
+    open var buttonColor: UIColor = UIColor.white {
+        didSet {
+            circleView.backgroundColor = buttonColor
+        }
+    }
 
     /**
      Title label color.
@@ -67,7 +70,9 @@ open class KCFloatingActionButtonItem: UIView {
     open var imageOffset: CGPoint = CGPoint.zero
     open var imageSize: CGSize = CGSize(width: 25, height: 25) {
         didSet {
-            _iconImageView?.frame = CGRect(x: 0, y: 0, width: imageSize.width, height: imageSize.height)
+            setIconConstraints()
+            iconImageView.layoutIfNeeded()
+            
         }
     }
 
@@ -79,7 +84,9 @@ open class KCFloatingActionButtonItem: UIView {
     /**
      Shape layer of button.
      */
-    fileprivate var circleLayer: CAShapeLayer = CAShapeLayer()
+    fileprivate var circleView = UIView()
+
+    fileprivate var circleViewConstraints: [NSLayoutConstraint] = []
 
     /**
      If you keeping touch inside button, button overlaid with tint layer.
@@ -89,18 +96,10 @@ open class KCFloatingActionButtonItem: UIView {
     /**
      Item's title label.
      */
-    var _titleLabel: UILabel? = nil
-    open var titleLabel: UILabel {
-        get {
-            if _titleLabel == nil {
-                _titleLabel = UILabel()
-                _titleLabel?.textColor = titleColor
-                addSubview(_titleLabel!)
-                setTitleShadow()
-            }
-            return _titleLabel!
-        }
-    }
+    let titleLabel = UILabel()
+
+    fileprivate var titleConstraints: [NSLayoutConstraint] = []
+
 
     /**
      Item's title.
@@ -108,27 +107,16 @@ open class KCFloatingActionButtonItem: UIView {
     open var title: String? = nil {
         didSet {
             titleLabel.text = title
-            titleLabel.sizeToFit()
-            titleLabel.frame.origin.x = -titleLabel.frame.size.width - 10
-            titleLabel.frame.origin.y = self.size/2-titleLabel.frame.size.height/2
+            titleLabel.layoutIfNeeded()
         }
     }
 
     /**
      Item's icon image view.
      */
-    var _iconImageView: UIImageView? = nil
-    open var iconImageView: UIImageView {
-        get {
-            if _iconImageView == nil {
-                _iconImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: imageSize.width, height: imageSize.height))
-                _iconImageView?.center = CGPoint(x: size/2, y: size/2) + imageOffset
-                _iconImageView?.contentMode = UIViewContentMode.scaleAspectFill
-                addSubview(_iconImageView!)
-            }
-            return _iconImageView!
-        }
-    }
+    let iconImageView = UIImageView()
+
+    fileprivate var imageConstraints: [NSLayoutConstraint] = []
 
     /**
      Item's icon.
@@ -145,8 +133,8 @@ open class KCFloatingActionButtonItem: UIView {
     open var iconTintColor: UIColor! = nil {
         didSet {
             let image = iconImageView.image?.withRenderingMode(.alwaysTemplate)
-            _iconImageView?.tintColor = iconTintColor
-            _iconImageView?.image = image
+            iconImageView.tintColor = iconTintColor
+            iconImageView.image = image
         }
     }
 
@@ -154,7 +142,7 @@ open class KCFloatingActionButtonItem: UIView {
       itemBackgroundColor change
     */
     public var itemBackgroundColor: UIColor? = nil {
-      didSet { circleLayer.backgroundColor = itemBackgroundColor?.cgColor }
+      didSet { circleView.backgroundColor = itemBackgroundColor}
     }
 
     // MARK: - Initialize
@@ -164,43 +152,40 @@ open class KCFloatingActionButtonItem: UIView {
      */
     public init() {
         super.init(frame: CGRect(x: 0, y: 0, width: size, height: size))
-        backgroundColor = UIColor.clear
+        setup()
     }
 
     required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+        setup()
     }
 
-    /**
-     Set size, frame and draw layers.
-     */
-    open override func draw(_ rect: CGRect) {
-        super.draw(rect)
+    func setup() {
 
-        self.layer.shouldRasterize = true
-        self.layer.rasterizationScale = UIScreen.main.scale
-        createCircleLayer()
+        backgroundColor = UIColor.green
 
-        if _titleLabel != nil {
-            bringSubview(toFront: _titleLabel!)
-        }
-        if _iconImageView != nil {
-            bringSubview(toFront: _iconImageView!)
-        }
-    }
+        translatesAutoresizingMaskIntoConstraints = false
 
-    fileprivate func createCircleLayer() {
-        //        circleLayer.frame = CGRectMake(frame.size.width - size, 0, size, size)
-        let castParent : KCFloatingActionButton = superview as! KCFloatingActionButton
-        circleLayer.frame = CGRect(x: castParent.itemSize/2 - (size/2), y: 0, width: size, height: size)
-        circleLayer.backgroundColor = buttonColor.cgColor
-        circleLayer.cornerRadius = size/2
-        layer.addSublayer(circleLayer)
+        circleView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(circleView)
         setCircleShadow()
+        setCircleViewConstraints()
+
+
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(titleLabel)
+        setTitleShadow()
+        setTitleConstraints()
+
+        iconImageView.translatesAutoresizingMaskIntoConstraints = false
+        iconImageView.contentMode = UIViewContentMode.scaleAspectFill
+        addSubview(iconImageView)
+        setIconConstraints()
+
+        print("setup ended")
     }
 
     fileprivate func createTintLayer() {
-        //        tintLayer.frame = CGRectMake(frame.size.width - size, 0, size, size)
         let castParent : KCFloatingActionButton = superview as! KCFloatingActionButton
         tintLayer.frame = CGRect(x: castParent.itemSize/2 - (size/2), y: 0, width: size, height: size)
         tintLayer.backgroundColor = UIColor.white.withAlphaComponent(0.2).cgColor
@@ -209,18 +194,17 @@ open class KCFloatingActionButtonItem: UIView {
     }
 
     fileprivate func setCircleShadow() {
-        circleLayer.shadowOffset = CGSize(width: 1, height: 1)
-        circleLayer.shadowRadius = 2
+        circleView.layer.shadowOffset = CGSize(width: 1, height: 1)
+        circleView.layer.shadowRadius = 2
         if let circleShadowColor = circleShadowColor {
-            circleLayer.shadowColor = circleShadowColor.cgColor
-            circleLayer.shadowOpacity = 0.4
+            circleView.layer.shadowColor = circleShadowColor.cgColor
+            circleView.layer.shadowOpacity = 0.4
         } else {
-            circleLayer.shadowOpacity = 0.0
+            circleView.layer.shadowOpacity = 0.0
         }
     }
 
     func setTitleShadow() {
-        guard let titleLabel = _titleLabel else { return }
         titleLabel.layer.shadowOffset = CGSize(width: 1, height: 1)
         titleLabel.layer.shadowRadius = 2
         if let titleShadowColor = titleShadowColor {
@@ -263,6 +247,56 @@ open class KCFloatingActionButtonItem: UIView {
                 handler?(self)
             }
         }
+    }
+}
+
+extension KCFloatingActionButtonItem {
+    func setTitleConstraints() {
+        titleConstraints.forEach {$0.isActive = false}
+        titleConstraints.removeAll()
+
+        titleConstraints.append(titleLabel.rightAnchor.constraint(equalTo: self.leftAnchor, constant: -10))
+        titleConstraints.append(titleLabel.centerYAnchor.constraint(equalTo: circleView.centerYAnchor))
+
+        titleConstraints.forEach {$0.isActive = true}
+    }
+
+    func setIconConstraints() {
+
+        imageConstraints.forEach {$0.isActive = false}
+        imageConstraints.removeAll()
+
+        imageConstraints.append(iconImageView.centerYAnchor.constraint(equalTo: circleView.centerYAnchor, constant: imageOffset.y))
+        imageConstraints.append(iconImageView.centerXAnchor.constraint(equalTo: circleView.centerXAnchor, constant: imageOffset.x))
+        imageConstraints.append(iconImageView.heightAnchor.constraint(equalToConstant: imageSize.height))
+        imageConstraints.append(iconImageView.widthAnchor.constraint(equalToConstant: imageSize.width))
+
+        imageConstraints.forEach {$0.isActive = true}
+
+        iconImageView.layoutIfNeeded()
+    }
+
+    func setCircleViewConstraints() {
+
+        circleViewConstraints.forEach {$0.isActive = false}
+        circleViewConstraints.removeAll()
+
+//        circleViewConstraints.append(circleView.centerYAnchor.constraint(equalTo: self.centerYAnchor))
+//        circleViewConstraints.append(circleView.centerXAnchor.constraint(equalTo: self.centerXAnchor))
+
+        circleViewConstraints.append(circleView.topAnchor.constraint(equalTo: self.topAnchor))
+        circleViewConstraints.append(circleView.leftAnchor.constraint(equalTo: self.leftAnchor))
+
+        circleViewConstraints.append(circleView.heightAnchor.constraint(equalToConstant: size))
+        circleViewConstraints.append(circleView.widthAnchor.constraint(equalToConstant: size))
+
+        circleView.layer.cornerRadius = size / 2
+
+        NSLayoutConstraint.activate(circleViewConstraints)
+
+        //circleViewConstraints.forEach {$0.isActive = true}
+
+        circleView.layoutIfNeeded()
     }
 }
 

@@ -48,6 +48,7 @@ class ViewController: UIViewController, KCFloatingActionButtonDelegate {
             self.present(alert, animated: true, completion: nil)
         }
         fab.addItem(item: item)
+        fab.openAnimationType = .slideDown
         fab.fabDelegate = self
         
         self.view.addSubview(fab)

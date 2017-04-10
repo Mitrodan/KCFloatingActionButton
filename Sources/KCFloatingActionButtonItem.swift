@@ -13,6 +13,7 @@ import UIKit
  */
 open class KCFloatingActionButtonItem: UIView {
 
+    let tittleOffset: CGFloat = 10
     // MARK: - Properties
 
     /**
@@ -100,6 +101,10 @@ open class KCFloatingActionButtonItem: UIView {
 
     fileprivate var titleConstraints: [NSLayoutConstraint] = []
 
+    let opaqueButton: UIButton = UIButton(type: .custom)
+
+    fileprivate var buttonConstraints: [NSLayoutConstraint] = []
+
 
     /**
      Item's title.
@@ -162,10 +167,6 @@ open class KCFloatingActionButtonItem: UIView {
 
     func setup() {
 
-        backgroundColor = UIColor.green
-
-        translatesAutoresizingMaskIntoConstraints = false
-
         circleView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(circleView)
         setCircleShadow()
@@ -182,7 +183,13 @@ open class KCFloatingActionButtonItem: UIView {
         addSubview(iconImageView)
         setIconConstraints()
 
-        print("setup ended")
+        opaqueButton.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(opaqueButton)
+        setButtonConstraints()
+        opaqueButton.addTarget(self, action: #selector(buttonAction), for: .touchDown)
+        opaqueButton.backgroundColor = .clear
+        opaqueButton.isExclusiveTouch = true
+
     }
 
     fileprivate func createTintLayer() {
@@ -215,55 +222,56 @@ open class KCFloatingActionButtonItem: UIView {
         }
     }
 
-    open override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if touches.count == 1 {
-            let touch = touches.first
-            if touch?.tapCount == 1 {
-                if touch?.location(in: self) == nil { return }
-                createTintLayer()
-            }
+    func buttonAction() {
+        handler?(self)
+        actionButton?.toggle()
+    }
+
+    override open func didMoveToSuperview() {
+        super.didMoveToSuperview()
+
+
+    }
+}
+
+extension KCFloatingActionButtonItem {
+    func updateFrameAfterAnimation() {
+        if bounds.size.width == circleView.frame.width {
+            var newFrame = frame
+            newFrame.size.width += titleLabel.frame.width + tittleOffset
+            newFrame.origin.x -= titleLabel.frame.width + tittleOffset
+            frame = newFrame
         }
     }
 
-    open override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if touches.count == 1 {
-            let touch = touches.first
-            if touch?.tapCount == 1 {
-                if touch?.location(in: self) == nil { return }
-                createTintLayer()
-            }
-        }
-    }
-
-    open override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        tintLayer.removeFromSuperlayer()
-        if touches.count == 1 {
-            let touch = touches.first
-            if touch?.tapCount == 1 {
-                if touch?.location(in: self) == nil { return }
-                if actionButton != nil && actionButton!.autoCloseOnTap {
-                    actionButton!.close()
-                }
-                handler?(self)
-            }
+    func updateFrameBeforeAnimation(){
+        if bounds.size.width != circleView.frame.width {
+            var newFrame = frame
+            newFrame.size.width = circleView.frame.width
+            newFrame.origin.x += frame.width - circleView.frame.width
+            frame = newFrame
         }
     }
 }
 
 extension KCFloatingActionButtonItem {
+
     func setTitleConstraints() {
-        titleConstraints.forEach {$0.isActive = false}
+
+        NSLayoutConstraint.deactivate(titleConstraints)
         titleConstraints.removeAll()
 
-        titleConstraints.append(titleLabel.rightAnchor.constraint(equalTo: self.leftAnchor, constant: -10))
+        titleConstraints.append(titleLabel.rightAnchor.constraint(equalTo: circleView.leftAnchor, constant: -tittleOffset))
         titleConstraints.append(titleLabel.centerYAnchor.constraint(equalTo: circleView.centerYAnchor))
 
-        titleConstraints.forEach {$0.isActive = true}
+        NSLayoutConstraint.activate(titleConstraints)
+
+        titleLabel.layoutIfNeeded()
     }
 
     func setIconConstraints() {
 
-        imageConstraints.forEach {$0.isActive = false}
+        NSLayoutConstraint.deactivate(imageConstraints)
         imageConstraints.removeAll()
 
         imageConstraints.append(iconImageView.centerYAnchor.constraint(equalTo: circleView.centerYAnchor, constant: imageOffset.y))
@@ -271,21 +279,18 @@ extension KCFloatingActionButtonItem {
         imageConstraints.append(iconImageView.heightAnchor.constraint(equalToConstant: imageSize.height))
         imageConstraints.append(iconImageView.widthAnchor.constraint(equalToConstant: imageSize.width))
 
-        imageConstraints.forEach {$0.isActive = true}
+        NSLayoutConstraint.activate(imageConstraints)
 
         iconImageView.layoutIfNeeded()
     }
 
     func setCircleViewConstraints() {
 
-        circleViewConstraints.forEach {$0.isActive = false}
+        NSLayoutConstraint.deactivate(circleViewConstraints)
         circleViewConstraints.removeAll()
 
-//        circleViewConstraints.append(circleView.centerYAnchor.constraint(equalTo: self.centerYAnchor))
-//        circleViewConstraints.append(circleView.centerXAnchor.constraint(equalTo: self.centerXAnchor))
-
         circleViewConstraints.append(circleView.topAnchor.constraint(equalTo: self.topAnchor))
-        circleViewConstraints.append(circleView.leftAnchor.constraint(equalTo: self.leftAnchor))
+        circleViewConstraints.append(circleView.rightAnchor.constraint(equalTo: self.rightAnchor))
 
         circleViewConstraints.append(circleView.heightAnchor.constraint(equalToConstant: size))
         circleViewConstraints.append(circleView.widthAnchor.constraint(equalToConstant: size))
@@ -294,9 +299,23 @@ extension KCFloatingActionButtonItem {
 
         NSLayoutConstraint.activate(circleViewConstraints)
 
-        //circleViewConstraints.forEach {$0.isActive = true}
 
         circleView.layoutIfNeeded()
+    }
+
+    func setButtonConstraints() {
+        NSLayoutConstraint.deactivate(buttonConstraints)
+        buttonConstraints.removeAll()
+
+        buttonConstraints.append(opaqueButton.heightAnchor.constraint(equalTo: self.circleView.heightAnchor))
+        buttonConstraints.append(opaqueButton.centerYAnchor.constraint(equalTo: self.circleView.centerYAnchor))
+
+        buttonConstraints.append(opaqueButton.leftAnchor.constraint(equalTo: self.titleLabel.leftAnchor))
+        buttonConstraints.append(opaqueButton.rightAnchor.constraint(equalTo: self.circleView.rightAnchor))
+
+        NSLayoutConstraint.activate(buttonConstraints)
+
+        opaqueButton.layoutIfNeeded()
     }
 }
 

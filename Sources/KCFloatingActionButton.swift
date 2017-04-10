@@ -490,6 +490,7 @@ open class KCFloatingActionButton: UIView {
 
         tintLayer.frame = tintButton.bounds
         plusLayer.frame = tintButton.bounds
+        setPlusLayer()
     }
 
     fileprivate func setPlusLayer() {
